@@ -13,6 +13,10 @@ void eventMessage(Wrapper_TcMessage *message)
 	std::cout << message->Message << std::endl;
 }
 
+void eventAlarmRaised(Wrapper_TcAlarm* alarm)
+{
+	std::cout << alarm->Message << std::endl;
+}
 
 int main()
 {
@@ -21,7 +25,8 @@ int main()
 	// %USERPROFILE%\.nuget\packages\beckhoff.twincat.tceventloggeradsproxy.net\2.6.3\runtimes\win-x64\native\TcEventLoggerAdsProxy.dll
 
 	EventLoggerWrapper::init("5.80.201.232.1.1");
-	EventLoggerWrapper::registerMessageSent(std::bind(&eventMessage, _1));
+	EventLoggerWrapper::registerMessageSent(std::bind(eventMessage, _1));
+	EventLoggerWrapper::registerAlarmRaised(std::bind(eventAlarmRaised, _1));
 
 	do {
 		std::cout << "Press ENTER to exit" << std::endl;;

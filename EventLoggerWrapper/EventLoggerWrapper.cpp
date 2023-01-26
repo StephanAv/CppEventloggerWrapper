@@ -55,14 +55,28 @@ extern "C" EVENTLOGGERWRAPPER_API void __stdcall EventLoggerWrapper::registerMes
     logger.m_fPtr_messageSend_user = fMessage;
 }
 
+extern "C" EVENTLOGGERWRAPPER_API void __stdcall EventLoggerWrapper::registerAlarmRaised(std::function<void(Wrapper_TcAlarm*)> fAlarmRaised)
+{
+    EventLoggerProxy& logger = EventLoggerProxy::getInstance();
+    logger.m_fPtr_alarmRaised_user = fAlarmRaised;
+}
+
+
+
 void EventLoggerWrapper::EventLoggerProxy::init(String^ amsNetId)
 {
     m_logger = gcnew TcEventLogger();
 
     m_fPtr_messageSend_instance = std::bind(&EventLoggerProxy::messageSent, this, _1);
+    m_fPtr_alarmRaised_instance = std::bind(&EventLoggerProxy::alarmRaised, this, _1);
+
     // Register Wrapper Callbacks
-    m_handler = gcnew LoggerEventHandler(&m_fPtr_messageSend_instance);
+    m_handler = gcnew LoggerEventHandler(
+                                            &m_fPtr_messageSend_instance,
+                                            &m_fPtr_alarmRaised_instance
+                                        );
     m_logger->MessageSent += gcnew _ITcEventLoggerEvents_MessageSentEventHandler(m_handler, &LoggerEventHandler::MessageSent);
+    m_logger->AlarmRaised += gcnew _ITcEventLoggerEvents_AlarmRaisedEventHandler(m_handler, &LoggerEventHandler::AlarmRaised);
 
     m_logger->Connect(amsNetId);
 }
@@ -74,6 +88,24 @@ void EventLoggerWrapper::EventLoggerProxy::messageSent(Wrapper_TcMessage *messag
     }
 }
 
+void EventLoggerWrapper::EventLoggerProxy::alarmRaised(Wrapper_TcAlarm* alarm)
+{
+    if (m_fPtr_alarmRaised_user) {
+        m_fPtr_alarmRaised_user(alarm);
+    }
+}
+
+void LoggerEventHandler::AlarmRaised(TcAlarm^ alarm)
+{
+    Wrapper_TcAlarm _alarm = {
+        alarm->EventId,
+        alarm->FileTimeRaised,
+        managedStrToNative(alarm->SourceName),
+        managedStrToNative(alarm->GetText(CultureInfo::CurrentCulture->LCID))
+    };
+
+    (*m_alarmRaised)(&_alarm);
+}
 
 
 void LoggerEventHandler::MessageSent(TcMessage ^message)

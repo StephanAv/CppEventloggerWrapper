@@ -12,15 +12,21 @@ namespace EventLoggerWrapper {
 	ref class LoggerEventHandler
 	{
 	public:
-		LoggerEventHandler(std::function<void(Wrapper_TcMessage *message)>* messageSend)
-			: m_messageSend(messageSend) {	};
+		LoggerEventHandler(
+			std::function<void(Wrapper_TcMessage*)>* messageSend,
+			std::function<void(Wrapper_TcAlarm*)>* alarmRaised
+			)
+			: m_messageSend(messageSend)
+			, m_alarmRaised(alarmRaised)
+			{	};
 
 		void MessageSent(TcMessage ^message);
-		//void AlarmRaised(TcAlarm evtObj) {};
+		void AlarmRaised(TcAlarm ^alarm);
 		//void AlarmCleared(TcAlarm evtObj, bool bRemove) {};
 		//void AlarmConfirmed(TcAlarm evtObj, bool bRemove) {};
 	private:
 		std::function<void(Wrapper_TcMessage *message)> *m_messageSend;
+		std::function<void(Wrapper_TcAlarm* alarm)>* m_alarmRaised;
 	};
 
 
@@ -39,9 +45,12 @@ namespace EventLoggerWrapper {
 		
 		void init(String^ amsNetId);
 		void messageSent(Wrapper_TcMessage *message);
+		void alarmRaised(Wrapper_TcAlarm* alarm);
 
 		std::function<void(Wrapper_TcMessage*)> m_fPtr_messageSend_instance;
 		std::function<void(Wrapper_TcMessage*)> m_fPtr_messageSend_user;
+		std::function<void(Wrapper_TcAlarm*)> m_fPtr_alarmRaised_instance;
+		std::function<void(Wrapper_TcAlarm*)> m_fPtr_alarmRaised_user;
 	private:
 		EventLoggerProxy() { /* Console::WriteLine("EventLoggerProxy() Constructor Called!"); */ };
 		~EventLoggerProxy() { /* Console::WriteLine("~EventLoggerProxy() Destructor Called!"); */ };

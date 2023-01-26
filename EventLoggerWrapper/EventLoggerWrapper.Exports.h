@@ -27,10 +27,18 @@ namespace EventLoggerWrapper {
         std::string Message;
     };
 
+    struct Wrapper_TcAlarm {
+        unsigned int EventId;
+        long long FileTimeRaised;
+        std::string SourceName;
+        std::string Message;
+    };
+
     extern "C"
     {
         //EVENTLOGGERWRAPPER_API void __stdcall init(std::function<void()> messageReceived);
         EVENTLOGGERWRAPPER_API void __stdcall init(const char* AmsNetId);
         EVENTLOGGERWRAPPER_API void __stdcall registerMessageSent(std::function<void(Wrapper_TcMessage*)> fMessage);
+        EVENTLOGGERWRAPPER_API void __stdcall registerAlarmRaised(std::function<void(Wrapper_TcAlarm*)> fAlarmRaised);
     }
 }
