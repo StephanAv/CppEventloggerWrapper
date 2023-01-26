@@ -61,7 +61,17 @@ extern "C" EVENTLOGGERWRAPPER_API void __stdcall EventLoggerWrapper::registerAla
     logger.m_fPtr_alarmRaised_user = fAlarmRaised;
 }
 
+extern "C" EVENTLOGGERWRAPPER_API void __stdcall EventLoggerWrapper::registerAlarmCleared(std::function<void(Wrapper_TcAlarm*, bool)> fAlarmCleared)
+{
+    EventLoggerProxy& logger = EventLoggerProxy::getInstance();
+    logger.m_fPtr_alarmCleared_user = fAlarmCleared;
+}
 
+extern "C" EVENTLOGGERWRAPPER_API void __stdcall EventLoggerWrapper::registerAlarmConfirmed(std::function<void(Wrapper_TcAlarm*, bool)> fAlarmConfirmed)
+{
+    EventLoggerProxy& logger = EventLoggerProxy::getInstance();
+    logger.m_fPtr_alarmConfirmed_user = fAlarmConfirmed;
+}
 
 void EventLoggerWrapper::EventLoggerProxy::init(String^ amsNetId)
 {
@@ -69,15 +79,20 @@ void EventLoggerWrapper::EventLoggerProxy::init(String^ amsNetId)
 
     m_fPtr_messageSend_instance = std::bind(&EventLoggerProxy::messageSent, this, _1);
     m_fPtr_alarmRaised_instance = std::bind(&EventLoggerProxy::alarmRaised, this, _1);
+    m_fPtr_alarmCleared_instance = std::bind(&EventLoggerProxy::alarmCleared, this, _1, _2);
+    m_fPtr_alarmConfirmed_instance = std::bind(&EventLoggerProxy::alarmConfirmed, this, _1, _2);
 
-    // Register Wrapper Callbacks
     m_handler = gcnew LoggerEventHandler(
                                             &m_fPtr_messageSend_instance,
-                                            &m_fPtr_alarmRaised_instance
+                                            &m_fPtr_alarmRaised_instance,
+                                            &m_fPtr_alarmCleared_instance,
+                                            &m_fPtr_alarmConfirmed_instance
                                         );
+
     m_logger->MessageSent += gcnew _ITcEventLoggerEvents_MessageSentEventHandler(m_handler, &LoggerEventHandler::MessageSent);
     m_logger->AlarmRaised += gcnew _ITcEventLoggerEvents_AlarmRaisedEventHandler(m_handler, &LoggerEventHandler::AlarmRaised);
-
+    m_logger->AlarmCleared += gcnew _ITcEventLoggerEvents_AlarmClearedEventHandler(m_handler, &LoggerEventHandler::AlarmCleared);
+    m_logger->AlarmConfirmed += gcnew _ITcEventLoggerEvents_AlarmConfirmedEventHandler(m_handler, &LoggerEventHandler::AlarmConfirmed);
     m_logger->Connect(amsNetId);
 }
 
@@ -95,6 +110,20 @@ void EventLoggerWrapper::EventLoggerProxy::alarmRaised(Wrapper_TcAlarm* alarm)
     }
 }
 
+void EventLoggerWrapper::EventLoggerProxy::alarmCleared(Wrapper_TcAlarm* alarm, bool bRemove)
+{
+    if (m_fPtr_alarmCleared_user) {
+        m_fPtr_alarmCleared_user(alarm, bRemove);
+    }
+}
+
+void EventLoggerWrapper::EventLoggerProxy::alarmConfirmed(Wrapper_TcAlarm* alarm, bool bRemove)
+{
+    if (m_fPtr_alarmConfirmed_user) {
+        m_fPtr_alarmConfirmed_user(alarm, bRemove);
+    }
+}
+
 void LoggerEventHandler::AlarmRaised(TcAlarm^ alarm)
 {
     Wrapper_TcAlarm _alarm = {
@@ -107,6 +136,29 @@ void LoggerEventHandler::AlarmRaised(TcAlarm^ alarm)
     (*m_alarmRaised)(&_alarm);
 }
 
+void LoggerEventHandler::AlarmCleared(TcAlarm^ alarm, bool bRemove)
+{
+    Wrapper_TcAlarm _alarm = {
+    alarm->EventId,
+    alarm->FileTimeRaised,
+    managedStrToNative(alarm->SourceName),
+    managedStrToNative(alarm->GetText(CultureInfo::CurrentCulture->LCID))
+    };
+
+    (*m_alarmCleared)(&_alarm, bRemove);
+}
+
+void LoggerEventHandler::AlarmConfirmed(TcAlarm^ alarm, bool bRemove)
+{
+    Wrapper_TcAlarm _alarm = {
+    alarm->EventId,
+    alarm->FileTimeRaised,
+    managedStrToNative(alarm->SourceName),
+    managedStrToNative(alarm->GetText(CultureInfo::CurrentCulture->LCID))
+    };
+
+    (*m_alarmConfirmed)(&_alarm, bRemove);
+}
 
 void LoggerEventHandler::MessageSent(TcMessage ^message)
 {
