@@ -51,6 +51,7 @@ namespace EventLoggerWrapper {
 		void operator=(EventLoggerProxy const&) = delete;
 		
 		void init(String^ amsNetId);
+		void deinit();
 		void messageSent(Wrapper_TcMessage *message);
 		void alarmRaised(Wrapper_TcAlarm* alarm);
 		void alarmCleared(Wrapper_TcAlarm* alarm, bool bRemove);

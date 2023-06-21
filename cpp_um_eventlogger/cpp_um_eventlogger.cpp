@@ -34,6 +34,7 @@ int main()
 	// %USERPROFILE%\.nuget\packages\beckhoff.twincat.tceventloggeradsproxy.net\2.6.3\lib\net6.0\Beckhoff.TwinCAT.TcEventLoggerAdsProxy.Native.Interop.dll
 	// %USERPROFILE%\.nuget\packages\beckhoff.twincat.tceventloggeradsproxy.net\2.6.3\runtimes\win-x64\native\TcEventLoggerAdsProxy.dll
 
+	//EventLoggerWrapper::init("5.73.96.116.1.1");
 	EventLoggerWrapper::init("5.80.201.232.1.1");
 	EventLoggerWrapper::registerMessageSent(std::bind(eventMessage, _1));
 	EventLoggerWrapper::registerAlarmRaised(std::bind(eventAlarmRaised, _1));
@@ -43,4 +44,6 @@ int main()
 	do {
 		std::cout << "Press ENTER to exit" << std::endl;;
 	} while (_getch() != '\r');
+
+	EventLoggerWrapper::deinit();
 }

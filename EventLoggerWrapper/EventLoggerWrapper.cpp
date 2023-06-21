@@ -12,7 +12,7 @@ std::string managedStrToNative(System::String^ sysstr)
     using System::IntPtr;
     using System::Runtime::InteropServices::Marshal;
 
-    IntPtr ip = Marshal::StringToHGlobalAnsi(sysstr);
+    IntPtr ip = Marshal::StringToHGlobalAnsi(sysstr); // Nullpointer check
     std::string outString = static_cast<const char*>(ip.ToPointer());
     Marshal::FreeHGlobal(ip);
     return outString;
@@ -47,6 +47,12 @@ extern "C" EVENTLOGGERWRAPPER_API void __stdcall EventLoggerWrapper::init(const 
     EventLoggerProxy& logger = EventLoggerProxy::getInstance();
     String^ managedString = gcnew String(AmsNetId);
     logger.init(managedString);
+}
+
+extern "C" EVENTLOGGERWRAPPER_API void __stdcall EventLoggerWrapper::deinit()
+{
+    EventLoggerProxy& logger = EventLoggerProxy::getInstance();
+    logger.deinit();
 }
 
 extern "C" EVENTLOGGERWRAPPER_API void __stdcall EventLoggerWrapper::registerMessageSent(std::function<void(Wrapper_TcMessage*)> fMessage)
@@ -96,6 +102,10 @@ void EventLoggerWrapper::EventLoggerProxy::init(String^ amsNetId)
     m_logger->Connect(amsNetId);
 }
 
+void EventLoggerWrapper::EventLoggerProxy::deinit()
+{
+    delete m_logger;
+}
 void EventLoggerWrapper::EventLoggerProxy::messageSent(Wrapper_TcMessage *message)
 {
     if (m_fPtr_messageSend_user) {

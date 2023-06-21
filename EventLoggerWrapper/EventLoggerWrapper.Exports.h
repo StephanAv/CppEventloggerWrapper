@@ -37,6 +37,7 @@ namespace EventLoggerWrapper {
     extern "C"
     {
         EVENTLOGGERWRAPPER_API void __stdcall init(const char* AmsNetId);
+        EVENTLOGGERWRAPPER_API void __stdcall deinit();
         EVENTLOGGERWRAPPER_API void __stdcall registerMessageSent(std::function<void(Wrapper_TcMessage*)> fMessage);
         EVENTLOGGERWRAPPER_API void __stdcall registerAlarmRaised(std::function<void(Wrapper_TcAlarm*)> fAlarmRaised);
         EVENTLOGGERWRAPPER_API void __stdcall registerAlarmCleared(std::function<void(Wrapper_TcAlarm*, bool)> fAlarmCleared);
